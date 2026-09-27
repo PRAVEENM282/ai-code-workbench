@@ -1,0 +1,13 @@
+{
+  "name": "workbench-static-analysis-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint --config ../config/eslint.config.mjs ../frontend/src"
+  },
+  "devDependencies": {
+    "eslint": "10.11.0",
+    "typescript": "6.0.2",
+    "typescript-eslint": "8.70.1"
+  }
+}
