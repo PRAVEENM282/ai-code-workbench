@@ -1,0 +1,152 @@
+service:
+  environment: development
+  host: 0.0.0.0
+  port: 8000
+  version: 0.1.0
+  cors_origins:
+    - http://localhost:3000
+database:
+  host: localhost
+  port: 5432
+  name: workbench
+  user: workbench
+  pool_size: 10
+  max_overflow: 10
+  connect_timeout_seconds: 5
+providers:
+  openai:
+    base_url: https://api.openai.com/v1
+    allowed_hosts: [api.openai.com]
+    model: ""
+    enabled: true
+    compatible_api: true
+    routing_role: reasoning
+    cost_per_million_tokens: 1.0
+    quality_score: 0.8
+    average_latency_ms: 3000
+    supported_languages: ["*"]
+    supported_tasks: [generation, unit_test, boilerplate, review, security, refactor, translation, testing, documentation]
+  anthropic:
+    base_url: https://api.anthropic.com/v1
+    allowed_hosts: [api.anthropic.com]
+    model: ""
+    enabled: true
+    compatible_api: false
+    routing_role: reasoning
+    cost_per_million_tokens: 3.0
+    quality_score: 1.0
+    average_latency_ms: 6000
+    supported_languages: ["*"]
+    supported_tasks: [generation, unit_test, boilerplate, review, security, refactor, translation, testing, documentation]
+  groq:
+    base_url: https://api.groq.com/openai/v1
+    allowed_hosts: [api.groq.com]
+    model: ""
+    enabled: true
+    compatible_api: true
+    routing_role: fast
+    cost_per_million_tokens: 0.2
+    quality_score: 0.7
+    average_latency_ms: 1200
+    supported_languages: ["*"]
+    supported_tasks: [generation, unit_test, boilerplate, review, refactor, translation, testing, documentation]
+  gemini:
+    base_url: https://generativelanguage.googleapis.com/v1beta
+    allowed_hosts: [generativelanguage.googleapis.com]
+    model: ""
+    enabled: true
+    compatible_api: false
+    routing_role: reasoning
+    cost_per_million_tokens: 0.5
+    quality_score: 0.8
+    average_latency_ms: 2500
+    supported_languages: ["*"]
+    supported_tasks: [generation, unit_test, boilerplate, review, security, refactor, translation, testing, documentation]
+  ollama:
+    base_url: http://ollama:11434/v1
+    allowed_hosts: [ollama]
+    model: ""
+    enabled: false
+    compatible_api: true
+    routing_role: fast
+    cost_per_million_tokens: 0.0
+    quality_score: 0.6
+    average_latency_ms: 10000
+    supported_languages: ["*"]
+    supported_tasks: [generation, unit_test, boilerplate, review, security, refactor, translation, testing, documentation]
+  openrouter:
+    base_url: https://openrouter.ai/api/v1
+    allowed_hosts: [openrouter.ai]
+    model: ""
+    enabled: false
+    compatible_api: true
+    routing_role: reasoning
+    cost_per_million_tokens: 1.0
+    quality_score: 0.8
+    average_latency_ms: 4000
+    supported_languages: ["*"]
+    supported_tasks: [generation, unit_test, boilerplate, review, security, refactor, translation, testing, documentation]
+  together:
+    base_url: https://api.together.xyz/v1
+    allowed_hosts: [api.together.xyz]
+    model: ""
+    enabled: false
+    compatible_api: true
+    routing_role: fast
+    cost_per_million_tokens: 0.5
+    quality_score: 0.8
+    average_latency_ms: 3000
+    supported_languages: ["*"]
+    supported_tasks: [generation, unit_test, boilerplate, review, security, refactor, translation, testing, documentation]
+routing:
+  task_roles:
+    boilerplate: fast
+    unit_test: fast
+    generation: fast
+    documentation: fast
+    translation: fast
+    testing: fast
+    review: reasoning
+    security: reasoning
+    refactor: reasoning
+  weights:
+    quality: 0.32
+    task_affinity: 0.2
+    cost: 0.16
+    latency: 0.16
+    health: 0.16
+  canary_percent: 0
+  experiment_salt: workbench-routing-v1
+  failure_threshold: 3
+  circuit_cooldown_seconds: 30
+limits:
+  request_bytes: 1048576
+  response_bytes: 1048576
+  response_compression_threshold_bytes: 131072
+  response_decompressed_bytes: 2097152
+  history_page_size: 25
+  history_max_page_size: 100
+  analyzer_timeout_seconds: 10
+  analyzer_output_bytes: 1048576
+  analyzer_concurrency: 4
+  provider_timeout_seconds: 60
+  provider_max_retries: 2
+  provider_concurrency: 16
+  metrics_rollup_interval_seconds: 3600
+  rate_limit_requests: 30
+  rate_limit_window_seconds: 60
+analyzers:
+  python:
+    pylint: [pylint, --output-format=json, --score=n]
+    flake8: [flake8, --isolated, "--format=%(path)s:%(row)d:%(col)d: %(code)s %(text)s"]
+    bandit: [bandit, --quiet, --format, json]
+  javascript: [eslint, --format, json]
+  typescript:
+    eslint: [eslint, --format, json]
+    compiler: [tsc, --noEmit, --pretty, "false", --skipLibCheck, --target, ES2022]
+  temporary_root: /tmp/workbench-analysis
+config_directory: ../config
+prompts_directory: ../prompts
+prompt_overrides_directory: ../prompt-templates
+feature_flags_directory: ../feature-flags
+telemetry_endpoint: ""

@@ -1,0 +1,108 @@
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:?Set POSTGRES_IMAGE in .env}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - "${POSTGRES_HOST_PORT:?Set POSTGRES_HOST_PORT in .env}:${POSTGRES_CONTAINER_PORT:?Set POSTGRES_CONTAINER_PORT in .env}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        PYTHON_IMAGE: ${PYTHON_IMAGE:?Set PYTHON_IMAGE in .env}
+        NODE_IMAGE: ${NODE_IMAGE:?Set NODE_IMAGE in .env}
+    environment:
+      WORKBENCH_SERVICE__HOST: ${WORKBENCH_SERVICE__HOST:?Set WORKBENCH_SERVICE__HOST in .env}
+      WORKBENCH_SERVICE__PORT: ${WORKBENCH_SERVICE__PORT:?Set WORKBENCH_SERVICE__PORT in .env}
+      WORKBENCH_SERVICE__CORS_ORIGINS: ${WORKBENCH_SERVICE__CORS_ORIGINS:?Set WORKBENCH_SERVICE__CORS_ORIGINS in .env}
+      WORKBENCH_SERVICE__VERSION: ${WORKBENCH_SERVICE__VERSION:-0.1.0}
+      WORKBENCH_DATABASE__POOL_SIZE: ${WORKBENCH_DATABASE__POOL_SIZE:-10}
+      WORKBENCH_DATABASE__MAX_OVERFLOW: ${WORKBENCH_DATABASE__MAX_OVERFLOW:-10}
+      WORKBENCH_DATABASE__CONNECT_TIMEOUT_SECONDS: ${WORKBENCH_DATABASE__CONNECT_TIMEOUT_SECONDS:-5}
+      WORKBENCH_DATABASE__HOST: postgres
+      WORKBENCH_DATABASE__PORT: ${POSTGRES_CONTAINER_PORT:?Set POSTGRES_CONTAINER_PORT in .env}
+      WORKBENCH_DATABASE__NAME: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
+      WORKBENCH_DATABASE__USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      WORKBENCH_DATABASE__PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      WORKBENCH_PROVIDERS__OPENAI__MODEL: ${WORKBENCH_PROVIDERS__OPENAI__MODEL:-}
+      WORKBENCH_PROVIDERS__OPENAI__API_KEY: ${WORKBENCH_PROVIDERS__OPENAI__API_KEY:-}
+      WORKBENCH_PROVIDERS__ANTHROPIC__MODEL: ${WORKBENCH_PROVIDERS__ANTHROPIC__MODEL:-}
+      WORKBENCH_PROVIDERS__ANTHROPIC__API_KEY: ${WORKBENCH_PROVIDERS__ANTHROPIC__API_KEY:-}
+      WORKBENCH_PROVIDERS__GROQ__MODEL: ${WORKBENCH_PROVIDERS__GROQ__MODEL:-}
+      WORKBENCH_PROVIDERS__GROQ__API_KEY: ${WORKBENCH_PROVIDERS__GROQ__API_KEY:-}
+      WORKBENCH_PROVIDERS__GEMINI__MODEL: ${WORKBENCH_PROVIDERS__GEMINI__MODEL:-}
+      WORKBENCH_PROVIDERS__GEMINI__API_KEY: ${WORKBENCH_PROVIDERS__GEMINI__API_KEY:-}
+      WORKBENCH_PROVIDERS__OLLAMA__MODEL: ${WORKBENCH_PROVIDERS__OLLAMA__MODEL:-}
+      WORKBENCH_PROVIDERS__OLLAMA__API_KEY: ${WORKBENCH_PROVIDERS__OLLAMA__API_KEY:-}
+      WORKBENCH_PROVIDERS__OPENROUTER__MODEL: ${WORKBENCH_PROVIDERS__OPENROUTER__MODEL:-}
+      WORKBENCH_PROVIDERS__OPENROUTER__API_KEY: ${WORKBENCH_PROVIDERS__OPENROUTER__API_KEY:-}
+      WORKBENCH_PROVIDERS__TOGETHER__MODEL: ${WORKBENCH_PROVIDERS__TOGETHER__MODEL:-}
+      WORKBENCH_PROVIDERS__TOGETHER__API_KEY: ${WORKBENCH_PROVIDERS__TOGETHER__API_KEY:-}
+      WORKBENCH_TELEMETRY_ENDPOINT: ${WORKBENCH_TELEMETRY_ENDPOINT:-}
+    ports:
+      - "${BACKEND_HOST_PORT:?Set BACKEND_HOST_PORT in .env}:${BACKEND_CONTAINER_PORT:?Set BACKEND_CONTAINER_PORT in .env}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,noexec,nosuid,nodev,size=${ANALYZER_TMPFS_BYTES:?Set ANALYZER_TMPFS_BYTES in .env}
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: ${BACKEND_MEMORY_LIMIT:?Set BACKEND_MEMORY_LIMIT in .env}
+    cpus: ${BACKEND_CPU_LIMIT:?Set BACKEND_CPU_LIMIT in .env}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ['WORKBENCH_SERVICE__PORT']+'/api/v1/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:?Set NODE_IMAGE in .env}
+        NGINX_IMAGE: ${NGINX_IMAGE:?Set NGINX_IMAGE in .env}
+        FRONTEND_CONTAINER_PORT: ${FRONTEND_CONTAINER_PORT:?Set FRONTEND_CONTAINER_PORT in .env}
+    environment:
+      FRONTEND_CONTAINER_PORT: ${FRONTEND_CONTAINER_PORT:?Set FRONTEND_CONTAINER_PORT in .env}
+      WORKBENCH_SERVICE__PORT: ${WORKBENCH_SERVICE__PORT:?Set WORKBENCH_SERVICE__PORT in .env}
+      WORKBENCH_API_BASE_URL: ${WORKBENCH_API_BASE_URL:-/api/v1}
+      NGINX_ENVSUBST_FILTER: FRONTEND_CONTAINER_PORT|WORKBENCH_SERVICE__PORT
+    ports:
+      - "${FRONTEND_HOST_PORT:?Set FRONTEND_HOST_PORT in .env}:${FRONTEND_CONTAINER_PORT:?Set FRONTEND_CONTAINER_PORT in .env}"
+    depends_on:
+      backend:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,noexec,nosuid,nodev,size=${FRONTEND_TMPFS_BYTES:?Set FRONTEND_TMPFS_BYTES in .env}
+      - /var/cache/nginx:uid=101,gid=101,mode=0755,size=${NGINX_CACHE_TMPFS_BYTES:?Set NGINX_CACHE_TMPFS_BYTES in .env}
+      - /var/run:uid=101,gid=101,mode=0755,size=${NGINX_CACHE_TMPFS_BYTES:?Set NGINX_CACHE_TMPFS_BYTES in .env}
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${FRONTEND_CONTAINER_PORT}/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

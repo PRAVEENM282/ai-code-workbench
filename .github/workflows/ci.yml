@@ -1,0 +1,84 @@
+name: quality
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      - run: python -m pip install -e 'backend[dev,analysis]'
+      - run: npm ci --prefix backend
+      - run: npm ci --prefix frontend
+      - name: Python quality gates
+        working-directory: backend
+        run: |
+          python -m pylint --errors-only --disable=not-callable src/workbench
+          python -m flake8 src/workbench tests alembic
+          python -m black --check src tests alembic
+          python -m bandit -q -r src/workbench
+          python -m pytest
+      - name: Frontend quality gates
+        working-directory: frontend
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test -- --run
+          npm run build
+      - name: Browser end-to-end and accessibility smoke tests
+        working-directory: frontend
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+
+  supply-chain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci --prefix backend
+      - run: npm ci --prefix frontend
+      - run: npm audit --prefix backend --audit-level=high
+      - run: npm audit --prefix frontend --audit-level=high
+      - run: python -m pip install pip-audit && python -m pip install -e 'backend[dev,analysis]' && pip-audit
+      - uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          artifact-name: ai-code-workbench-sbom.cdx.json
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+
+  container-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production images
+        run: |
+          cp .env.example .env
+          docker compose build
