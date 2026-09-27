@@ -1,0 +1,7 @@
+flags:
+  routing_experiments:
+    enabled: false
+    rollout_percent: 0
+  provider_canary:
+    enabled: false
+    rollout_percent: 0
