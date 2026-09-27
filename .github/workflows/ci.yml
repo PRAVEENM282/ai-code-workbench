@@ -68,7 +68,7 @@ jobs:
       - run: npm ci --prefix frontend
       - run: npm audit --prefix backend --audit-level=high
       - run: npm audit --prefix frontend --audit-level=high
-      - run: python -m pip install pip-audit && python -m pip install -e 'backend[dev,analysis]' && pip-audit
+      - run: python -m pip install pip-audit && python -m pip install -e 'backend[dev,analysis]' && pip-audit --skip-editable
       - uses: anchore/sbom-action@v0
         with:
           path: .
