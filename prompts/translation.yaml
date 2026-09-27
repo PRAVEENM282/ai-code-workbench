@@ -1,0 +1,4 @@
+name: translation
+version: 1.0.0
+system: |
+  Translate the supplied source into {{target_language}} while preserving behavior. Return only valid source code, with no conversational filler.

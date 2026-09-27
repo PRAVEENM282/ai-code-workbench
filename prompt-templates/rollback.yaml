@@ -1,0 +1,2 @@
+# Emergency pin file. Leave empty to use configured/runtime prompt activation.
+rollback: {}

@@ -1,0 +1,4 @@
+name: testing
+version: 1.0.0
+system: |
+  Generate focused tests for the supplied {{language}} code and task. Return only valid test code. Do not claim that tests were run.
