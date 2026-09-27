@@ -1,0 +1,81 @@
+{
+  "app": {
+    "name": "Workbench",
+    "workspace": "Workspace",
+    "online": "API online",
+    "checking": "Checking API",
+    "offline": "API unavailable"
+  },
+  "editor": {
+    "sourceCode": "Source code",
+    "language": "Language",
+    "languagePlaceholder": "Type or choose a language",
+    "task": "Task",
+    "python": "Python",
+    "javascript": "JavaScript",
+    "typescript": "TypeScript",
+    "sql": "SQL",
+    "unsaved": "Unsaved changes",
+    "emptyTitle": "Start with a source file",
+    "emptyDescription": "Write or paste code to generate changes or inspect it."
+  },
+  "prompt": {
+    "label": "Instruction",
+    "placeholder": "Describe the code you want or what you want reviewed…"
+  },
+  "taskTypes": {
+    "boilerplate": "Boilerplate",
+    "unit_test": "Unit tests",
+    "review": "Code review",
+    "security": "Security review",
+    "refactor": "Refactor",
+    "translation": "Translation",
+    "documentation": "Documentation"
+  },
+  "actions": {
+    "generate": "Generate",
+    "analyze": "Analyze",
+    "retry": "Retry",
+    "clear": "Clear results",
+    "commandPalette": "Open command palette",
+    "close": "Close",
+    "copyCode": "Copy code",
+    "replaceEditor": "Use generated code"
+  },
+  "results": {
+    "title": "Results",
+    "empty": "Results will appear here after an action.",
+    "loading": "Working…",
+    "generatedCode": "Generated code",
+    "explanation": "Explanation",
+    "staticAnalysis": "Static analysis",
+    "aiFeedback": "AI review",
+    "noFindings": "No findings",
+    "line": "Line",
+    "model": "Routed model",
+    "success": "Request completed",
+    "errorTitle": "Request failed",
+    "offlineTitle": "Connection unavailable",
+    "partial": "Some analysis results could not be loaded.",
+    "noPrompt": "Add an instruction before generating code."
+  },
+  "history": {
+    "title": "Recent requests",
+    "empty": "No requests yet.",
+    "error": "History could not be loaded.",
+    "retry": "Reload history"
+  },
+  "commandPalette": {
+    "title": "Command palette",
+    "search": "Search commands",
+    "generate": "Generate code",
+    "analyze": "Analyze source"
+  },
+  "accessibility": {
+    "workspace": "Code workbench",
+    "results": "Request results",
+    "history": "Request history",
+    "editorToolbar": "Editor actions",
+    "codeEditor": "Code editor"
+  }
+}
